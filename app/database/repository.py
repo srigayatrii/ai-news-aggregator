@@ -294,6 +294,38 @@ class Repository:
         self.session.commit()
         return digest
 
+    def get_digest_by_id(self, digest_id: str):
+        return self.session.query(Digest).filter(
+            Digest.id == digest_id
+        ).first()
+
+    def search_digests(self, query: str) -> List[Dict[str, Any]]:
+        search_term = f"%{query}%"
+
+        digests = (
+            self.session.query(Digest)
+            .filter(
+                (Digest.title.ilike(search_term))
+                | (Digest.summary.ilike(search_term))
+            )
+            .order_by(Digest.created_at.desc())
+            .all()
+        )
+
+        return [
+            {
+                "id": d.id,
+                "article_type": d.article_type,
+                "article_id": d.article_id,
+                "url": d.url,
+                "title": d.title,
+                "summary": d.summary,
+                "created_at": d.created_at,
+                "sent_at": d.sent_at,
+            }
+            for d in digests
+        ]
+
     def get_recent_digests(
         self, hours: int = 24, exclude_sent: bool = True
     ) -> List[Dict[str, Any]]:
