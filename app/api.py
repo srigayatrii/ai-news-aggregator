@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query
 from app.database.repository import Repository
 
 app = FastAPI(
@@ -35,7 +35,7 @@ def get_news():
 
 
 @app.get("/news/search")
-def search_news(q: str):
+def search_news(q: str = Query(min_length=1, max_length=100)):
     repo = Repository()
 
     digests = repo.search_digests(q)
@@ -63,7 +63,7 @@ def get_news_by_id(digest_id: str):
     digest = repo.get_digest_by_id(digest_id)
 
     if digest is None:
-        return {"error": "News item not found"}
+        raise HTTPException(status_code=404, detail="News item not found")
 
     return {
         "id": digest.id,
