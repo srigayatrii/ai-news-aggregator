@@ -16,18 +16,30 @@ class Repository:
         id_field: str,
         id_attr: str,
     ) -> int:
-        new_items = []
-        for item in items:
-            existing = (
-                self.session.query(model_class)
-                .filter_by(**{id_attr: item[id_field]})
-                .first()
+        if not items:
+            return 0
+
+        item_ids = [item[id_field] for item in items]
+
+        existing_ids = {
+            row[0]
+            for row in (
+                self.session.query(getattr(model_class, id_attr))
+                .filter(getattr(model_class, id_attr).in_(item_ids))
+                .all()
             )
-            if not existing:
-                new_items.append(model_class(**item))
+        }
+
+        new_items = [
+            model_class(**item)
+            for item in items
+            if item[id_field] not in existing_ids
+        ]
+
         if new_items:
             self.session.add_all(new_items)
             self.session.commit()
+
         return len(new_items)
 
     def create_youtube_video(
