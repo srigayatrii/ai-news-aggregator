@@ -23,11 +23,11 @@ def get_news():
         "count": len(digests),
         "news": [
             {
-                "id": digest.id,
-                "title": digest.title,
-                "summary": digest.summary,
-                "url": digest.url,
-                "article_type": digest.article_type,
+                "id": digest["id"],
+                "title": digest["title"],
+                "summary": digest["summary"],
+                "url": digest["url"],
+                "article_type": digest["article_type"],
             }
             for digest in digests
         ],
