@@ -1,9 +1,12 @@
+import logging
 from typing import List, Callable, Any
 from .config import YOUTUBE_CHANNELS
 from .scrapers.youtube import YouTubeScraper, ChannelVideo
 from .scrapers.openai import OpenAIScraper
 from .scrapers.anthropic import AnthropicScraper
 from .database.repository import Repository
+
+logger = logging.getLogger(__name__)
 
 
 def _save_youtube_videos(
@@ -76,7 +79,8 @@ def run_scrapers(hours: int = 24) -> dict:
         try:
             items = save_func(scraper, repo, hours)
             results[name] = items
-        except Exception:
+        except Exception as e:
+            logger.exception("Scraper '%s' failed: %s", name, e)
             results[name] = []
 
     return results
