@@ -8,6 +8,8 @@ load_dotenv()
 
 class BaseAgent(ABC):
     def __init__(self, model: str):
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.client = OpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        )
         self.model = model
-

@@ -59,7 +59,7 @@ Keep it concise (2-3 sentences for the introduction), friendly, and professional
 
 class EmailAgent(BaseAgent):
     def __init__(self, user_profile: dict):
-        super().__init__("gpt-4o-mini")
+        super().__init__("gemini-3.6-flash")
         self.user_profile = user_profile
 
     def generate_introduction(self, ranked_articles: List) -> EmailIntroduction:
@@ -84,15 +84,27 @@ Top 10 ranked articles:
 Generate a greeting and introduction that previews these articles."""
 
         try:
-            response = self.client.responses.parse(
+            response = self.client.chat.completions.create(
                 model=self.model,
-                instructions=EMAIL_PROMPT,
+                messages=[
+                    {"role": "system", "content": EMAIL_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
                 temperature=0.7,
-                input=user_prompt,
-                text_format=EmailIntroduction
+                response_format={"type": "json_object"},
             )
-            
-            intro = response.output_parsed
+
+            import json
+
+            data = json.loads(response.choices[0].message.content)
+
+            intro = EmailIntroduction(
+                greeting=data.get("greeting", f"Hey {self.user_profile['name']}, here is your daily digest for {current_date}."),
+                introduction=data.get(
+                    "introduction",
+                    data.get("subject", "Here are the top 10 AI news articles ranked by relevance to your interests.")
+                ),
+            )
             if not intro.greeting.startswith(f"Hey {self.user_profile['name']}"):
                 intro.greeting = f"Hey {self.user_profile['name']}, here is your daily digest of AI news for {current_date}."
             
@@ -124,4 +136,3 @@ Generate a greeting and introduction that previews these articles."""
             total_ranked=total_ranked,
             top_n=limit
         )
-

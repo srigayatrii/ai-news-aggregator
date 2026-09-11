@@ -37,7 +37,7 @@ Rank articles from most relevant (rank 1) to least relevant. Ensure each article
 
 class CuratorAgent(BaseAgent):
     def __init__(self, user_profile: dict):
-        super().__init__("gpt-4.1")
+        super().__init__("gemini-3.6-flash")
         self.user_profile = user_profile
         self.system_prompt = self._build_system_prompt()
 
@@ -75,16 +75,37 @@ Preferences:
 Provide a relevance score (0.0-10.0) and rank (1-{len(digests)}) for each article, ordered from most to least relevant."""
 
         try:
-            response = self.client.responses.parse(
+            response = self.client.chat.completions.create(
                 model=self.model,
-                instructions=self.system_prompt,
+                messages=[
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
                 temperature=0.3,
-                input=user_prompt,
-                text_format=RankedDigestList
+                response_format={"type": "json_object"},
             )
-            
-            ranked_list = response.output_parsed
-            return ranked_list.articles if ranked_list else []
+
+            import json
+
+            data = json.loads(response.choices[0].message.content)
+
+            if isinstance(data, list):
+                normalized = [
+                    {
+                        "digest_id": article.get("digest_id", article.get("id")),
+                        "relevance_score": article.get(
+                            "relevance_score",
+                            article.get("score", 0.0)
+                        ),
+                        "rank": article["rank"],
+                        "reasoning": article["reasoning"],
+                    }
+                    for article in data
+                ]
+                return [RankedArticle(**article) for article in normalized]
+
+            ranked_list = RankedDigestList(**data)
+            return ranked_list.articles
         except Exception as e:
             print(f"Error ranking digests: {e}")
             return []
