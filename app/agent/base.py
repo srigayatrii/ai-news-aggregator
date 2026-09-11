@@ -11,5 +11,6 @@ class BaseAgent(ABC):
         self.client = OpenAI(
             api_key=os.getenv("OPENAI_API_KEY"),
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            max_retries=0,
         )
         self.model = model
